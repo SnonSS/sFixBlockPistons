@@ -1,0 +1,108 @@
+package sFixBlockPistons;
+
+import java.io.File;
+import java.io.IOException;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.permissions.Permissible;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class Main extends JavaPlugin implements Listener {
+  @SuppressWarnings("unused")
+private FileConfiguration config;
+  
+  String blockonlypistons;
+  
+  @SuppressWarnings("unused")
+private OfflinePlayer e;
+  
+  public void onEnable() {
+    this.config = getConfig("config.yml");
+    getLogger().info("Enabled");
+    Bukkit.getServer().getPluginManager().registerEvents(this, (Plugin)this);
+  }
+  
+  public void onDisable() {
+    getLogger().info("Disabled");
+  }
+  
+  @EventHandler
+  public void blockPiston(BlockPistonRetractEvent e) {
+    Object player = null;
+    if ((player == null || ((Permissible)player).hasPermission("sfixblockpistons.use")) && 
+      getConfig().getBoolean("block-only-pistons"))
+      e.setCancelled(true); 
+  }
+  
+  @EventHandler
+  public void blockPiston(BlockPistonExtendEvent e) {
+    Object player = null;
+    if ((player == null || ((Permissible)player).hasPermission("sfixblockpistons.use")) && 
+      getConfig().getBoolean("block-only-pistons"))
+      e.setCancelled(true); 
+  }
+  
+  public boolean onCommand(CommandSender sender, Command cmd, String cmdLabel, String[] args) {
+    if (args.length == 0)
+      return false; 
+    Player player = (sender instanceof Player) ? (Player)sender : null;
+    if (args[0].equalsIgnoreCase("reload")) {
+      if (player == null || player.hasPermission("sFixBlockPistons.reload"))
+        return ReloadCFG(sender); 
+      sender.sendMessage(ChatColor.DARK_RED + "[sFixBlockPistons] Нет прав!");
+      return false;
+    } 
+    return true;
+  }
+  
+  private boolean ReloadCFG(CommandSender sender) {
+    if (sender != null)
+      sender.sendMessage(ChatColor.GREEN + "[sFixBlockPistons] Успешно перезагружено!"); 
+    load();
+    return true;
+  }
+  
+  public void save() {
+    getConfig().set("block-only-pistons", this.blockonlypistons);
+    saveConfig();
+  }
+  
+  public void load() {
+    reloadConfig();
+    this.blockonlypistons = getConfig().getString("block-only-pistons");
+  }
+  
+  private FileConfiguration getConfig(String name) {
+    File f = new File(getDataFolder(), name);
+    if (getResource(name) == null)
+      return save((FileConfiguration)YamlConfiguration.loadConfiguration(f), name); 
+    if (!f.exists())
+      saveResource(name, false); 
+    return (FileConfiguration)YamlConfiguration.loadConfiguration(f);
+  }
+  
+  private FileConfiguration save(FileConfiguration config, String name) {
+    try {
+      config.save(new File(getDataFolder(), name));
+    } catch (IOException e) {
+      e.printStackTrace();
+    } 
+    return config;
+  }
+  
+  @SuppressWarnings("unused")
+private String colorize(String text) {
+    return ChatColor.translateAlternateColorCodes('&', "&f" + text);
+  }
+}
